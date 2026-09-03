@@ -1,0 +1,12 @@
+transformers>=4.35
+torch>=2.0
+huggingface_hub
+datasets
+beautifulsoup4
+lxml
+scikit-learn
+fastapi
+uvicorn
+pydantic
+razorpay
+python-dotenv

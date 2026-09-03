@@ -1,0 +1,25 @@
+# Secrets
+.env
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Runtime state / databases
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# Third-party clones used only as reference
+reference-repos/
+
+# Session / tooling artifacts
+.remember/
+NUL
+
+# HF / model caches (if any land in-tree)
+.cache/
+hf_cache/
