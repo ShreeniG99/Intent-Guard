@@ -5,12 +5,23 @@ Exercises the running FastAPI firewall (main.py) end-to-end against real
 HTTP calls to localhost:8000. Run `uvicorn main:app --port 8000` from the
 firewall/ folder in ONE terminal first, then this script in another.
 
-Three scenarios:
+Six scenarios:
   1. Clean path: intent -> clean snapshot -> matching checkout -> expect ALLOW
-  2. Injected content: intent -> poisoned snapshot -> matching checkout ->
-     expect BLOCK or REVALIDATE (deterministic + classifier flags fire)
-  3. Hard block: intent -> clean snapshot -> checkout with a DIFFERENT price
-     than intent's max_price -> expect BLOCK regardless of content
+     (creates a real Razorpay test-mode order)
+  2. Injected content (REAL StakeBench IPI case T3.3): intent -> poisoned
+     snapshot -> matching checkout -> expect BLOCK (deterministic +40 and
+     classifier ~0.99 both fire, risk ~70)
+  3. Hard block: intent -> clean snapshot -> checkout with a price ABOVE
+     intent's max_price -> expect BLOCK regardless of content
+  4. Capture with an unknown order_id -> expect 404
+  5. GET /audit -> last 5 decision-envelope rows
+  6. Catalog drift: browse-time price != the agent's fresh look right before
+     checkout -> check_freshness() fires -> expect ALLOW upgraded to
+     REVALIDATE, reason "catalog_state_changed_since_browse", token NOT
+     consumed (this exercises the freshness wiring added to /checkout)
+
+Last verified 2026-09-04: all 6 pass. Scenario 1 created real order
+order_TXpI3M8q7Oe9VL; Scenario 6 returned REVALIDATE as expected.
 """
 import requests
 
