@@ -1,0 +1,206 @@
+/* Simply Shop — shared stylesheet for the 3 demo merchant pages.
+   Visual language mirrors Flipkart's mobile product page: Roboto, the
+   #2874f0 blue, the orange ADD TO CART / BUY NOW pair, the green rating
+   pill, the grey spec table, the sticky bottom action bar.
+   Target width: a phone (390px). Everything is single-column. */
+
+:root {
+  --blue:        #2874f0;
+  --orange-cart: #ff9f00;
+  --orange-buy:  #fb641b;
+  --green:       #388e3c;
+  --text:        #212121;
+  --text-2:      #878787;
+  --text-3:      #565959;
+  --line:        #e0e0e0;
+  --line-soft:   #f0f0f0;
+  --bg:          #f1f3f6;
+  --card:        #ffffff;
+  --gold:        #ffe500;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  font-family: Roboto, "Segoe UI", Arial, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  max-width: 420px;
+  margin: 0 auto;
+  padding-bottom: 60px;                 /* clearance for the sticky bar */
+  line-height: 1.45;
+}
+
+img { max-width: 100%; display: block; }
+a { color: var(--blue); text-decoration: none; }
+
+/* ---------- top bar ------------------------------------------------ */
+.topbar {
+  position: sticky; top: 0; z-index: 20;
+  background: var(--card);
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px;
+  box-shadow: 0 1px 2px rgba(0,0,0,.12);
+}
+.topbar .icon-btn { color: var(--text); display: flex; }
+.brand { display: flex; flex-direction: column; line-height: 1; margin-right: auto; }
+.brand .name { font-weight: 700; font-size: 17px; font-style: italic; color: var(--blue); letter-spacing: -.2px; }
+.brand .tag  { font-size: 10px; color: var(--text-2); font-style: italic; }
+.brand .tag b { color: #ffab00; font-style: normal; }
+.topbar .actions { display: flex; align-items: center; gap: 16px; }
+
+/* ---------- breadcrumb ------------------------------------------- */
+.crumbs { background: var(--card); padding: 8px 12px; font-size: 11px; color: var(--text-2);
+          border-bottom: 1px solid var(--line-soft); overflow-x: auto; white-space: nowrap; }
+.crumbs a { color: var(--text-2); }
+.crumbs span { margin: 0 4px; }
+
+/* ---------- gallery -------------------------------------------------- */
+.gallery { background: var(--card); position: relative; padding: 8px 0 4px; }
+.gallery .main {
+  height: 300px; display: flex; align-items: center; justify-content: center;
+  padding: 12px;
+}
+.gallery .main svg, .gallery .main img { max-height: 100%; width: auto; }
+.gallery .wishlist {
+  position: absolute; top: 14px; right: 14px;
+  width: 34px; height: 34px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.2);
+  display: flex; align-items: center; justify-content: center; color: var(--text-2);
+}
+.gallery .thumbs { display: flex; gap: 8px; padding: 8px 12px 4px; overflow-x: auto; }
+.gallery .thumbs .t {
+  flex: 0 0 46px; height: 46px; border: 1px solid var(--line); border-radius: 4px;
+  display: flex; align-items: center; justify-content: center; padding: 4px;
+}
+.gallery .thumbs .t.sel { border-color: var(--blue); border-width: 2px; }
+.gallery .thumbs .t svg { max-width: 100%; max-height: 100%; }
+
+/* ---------- main info card --------------------------------------- */
+.card { background: var(--card); padding: 12px; margin-top: 8px; }
+.title { font-size: 15px; font-weight: 400; color: #212121; }
+.byline { font-size: 12px; margin: 6px 0; }
+.byline a { font-weight: 500; }
+
+.ratingline { display: flex; align-items: center; gap: 8px; margin: 8px 0 4px; flex-wrap: wrap; }
+.rpill {
+  background: var(--green); color: #fff; font-size: 12px; font-weight: 700;
+  padding: 2px 6px; border-radius: 3px; display: inline-flex; align-items: center; gap: 3px;
+}
+.rcount { font-size: 12px; color: var(--text-2); font-weight: 500; }
+.assured { display: inline-flex; align-items: center; gap: 3px; color: var(--blue); font-size: 11px; font-weight: 700; }
+
+.pricerow { display: flex; align-items: baseline; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.price   { font-size: 26px; font-weight: 500; color: #212121; }
+.mrp     { font-size: 13px; color: var(--text-2); text-decoration: line-through; }
+.off     { font-size: 13px; color: var(--green); font-weight: 500; }
+.feefine { font-size: 11px; color: var(--text-2); margin-top: 3px; }
+.taxline { font-size: 11px; color: var(--text-2); margin-top: 2px; }
+
+/* ---------- offers box ----------------------------------------------- */
+.offers { margin-top: 12px; }
+.offers h3 { font-size: 14px; font-weight: 500; margin-bottom: 8px; }
+.offer { display: flex; gap: 8px; font-size: 12px; margin-bottom: 9px; color: #212121; }
+.offer .tag-i { color: var(--green); flex: 0 0 16px; }
+.offer b { font-weight: 500; }
+.offer.agent {                              /* used only on page 3 */
+  background: #fff8e1; border: 1px solid #ffe082; border-radius: 4px; padding: 8px;
+}
+
+/* ---------- coupon chips ---------------------------------------------- */
+.coupons { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+.chip-coupon {
+  border: 1px dashed var(--blue); color: var(--blue); font-size: 11px; font-weight: 500;
+  border-radius: 4px; padding: 4px 8px; background: #f5f9ff;
+}
+
+/* ---------- delivery / seller ---------------------------------------- */
+.kv { font-size: 12px; margin: 6px 0; color: #212121; }
+.kv .muted { color: var(--text-2); }
+.instock { color: var(--green); font-weight: 500; }
+
+/* ---------- variant chips ------------------------------------------- */
+.variant { margin-top: 14px; }
+.variant .label { font-size: 13px; margin-bottom: 8px; }
+.variant .label b { font-weight: 500; }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip {
+  border: 1px solid var(--line); border-radius: 4px; padding: 7px 12px;
+  font-size: 12px; color: #212121; background: #fff; min-width: 44px; text-align: center;
+}
+.chip.sel { border-color: var(--blue); border-width: 2px; color: var(--blue); font-weight: 500; }
+.chip.dis { color: #bbb; text-decoration: line-through; }
+
+/* ---------- qty stepper ------------------------------------------- */
+.qty { display: flex; align-items: center; gap: 0; margin-top: 12px; }
+.qty .label { font-size: 13px; margin-right: 12px; }
+.qty button {
+  width: 32px; height: 32px; border: 1px solid var(--line); background: #fff;
+  font-size: 16px; color: var(--text-3);
+}
+.qty .n { width: 40px; height: 32px; border: 1px solid var(--line); border-left: 0; border-right: 0;
+          display: flex; align-items: center; justify-content: center; font-size: 13px; }
+
+/* ---------- highlights / description / specs --------------------- */
+.section { background: var(--card); margin-top: 8px; padding: 12px; }
+.section h2 { font-size: 15px; font-weight: 500; margin-bottom: 10px; }
+.hl { list-style: none; }
+.hl li { display: flex; font-size: 12px; margin-bottom: 7px; color: #212121; }
+.hl li::before { content: ""; flex: 0 0 5px; height: 5px; border-radius: 50%; background: var(--text-2); margin: 6px 10px 0 2px; }
+.desc p { font-size: 12.5px; color: #212121; margin-bottom: 9px; }
+
+table.specs { width: 100%; border-collapse: collapse; font-size: 12px; }
+table.specs td { padding: 8px 6px; vertical-align: top; border-bottom: 1px solid var(--line-soft); }
+table.specs td.k { color: var(--text-2); width: 42%; }
+
+/* ---------- reviews --------------------------------------------------- */
+.rev-head { display: flex; align-items: center; gap: 14px; }
+.rev-big { font-size: 28px; font-weight: 500; }
+.rev-big small { font-size: 13px; color: var(--text-2); font-weight: 400; }
+.bars { flex: 1; }
+.bar { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-2); margin: 2px 0; }
+.bar .track { flex: 1; height: 4px; background: var(--line); border-radius: 2px; overflow: hidden; }
+.bar .fill { height: 100%; background: var(--green); }
+.customers-say { font-size: 12px; color: #212121; background: #fafafa; border: 1px solid var(--line-soft);
+                 border-radius: 4px; padding: 10px; margin: 12px 0; }
+.aspects { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+.aspect { font-size: 11px; border: 1px solid var(--line); border-radius: 14px; padding: 3px 9px; color: var(--text-3); }
+
+.review { border-top: 1px solid var(--line-soft); padding: 12px 0; }
+.review:first-of-type { border-top: 0; }
+.review .r1 { display: flex; align-items: center; gap: 8px; }
+.review .rp { background: var(--green); color: #fff; font-size: 11px; font-weight: 700; padding: 1px 5px; border-radius: 3px; }
+.review .rt { font-size: 13px; font-weight: 500; }
+.review .who { font-size: 11px; color: var(--text-2); margin: 4px 0; }
+.review .who .cb { color: #878787; }
+.review .who .cb b { color: var(--text-3); font-weight: 500; }
+.review .body { font-size: 12.5px; color: #212121; }
+.review .foot { display: flex; gap: 16px; font-size: 11px; color: var(--text-2); margin-top: 8px; }
+
+/* text a screen reader / DOM scraper sees but a sighted shopper does not.
+   Used ONLY on page 2, deliberately, to model a poisoned review. */
+.sr-inject { color: #fff; font-size: 0; line-height: 0; position: absolute; left: -9999px; }
+body.reveal .sr-inject {
+  color: #b71c1c; font-size: 12px; line-height: 1.4; position: static; left: auto;
+  display: block; background: #ffebee; border: 1px dashed #b71c1c; border-radius: 4px;
+  padding: 6px; margin-top: 6px;
+}
+body.reveal .sr-inject::before { content: "⚠ hidden text an agent reads — invisible to a shopper: "; font-weight: 700; }
+
+/* ---------- sticky bottom bar ----------------------------------------- */
+.actionbar {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 420px; display: flex; z-index: 30;
+  box-shadow: 0 -1px 6px rgba(0,0,0,.18);
+}
+.actionbar button {
+  flex: 1; border: 0; padding: 15px 0; font-size: 14px; font-weight: 600;
+  letter-spacing: .3px; display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.actionbar .cart { background: var(--orange-cart); color: #fff; }
+.actionbar .buy  { background: var(--orange-buy);  color: #fff; }
+
+.divider-8 { height: 8px; background: var(--bg); }

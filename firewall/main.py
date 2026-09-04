@@ -17,6 +17,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Body
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from broadcaster import broadcaster
@@ -29,6 +30,17 @@ from razorpay_client import (create_order, fetch_payment, capture_payment,
                              refund_payment, get_client)
 
 app = FastAPI(title="Checkout Integrity Firewall")
+
+# --- demo merchant pages -------------------------------------------------
+# The 3 Simply Shop product pages the demo agent browses, served straight
+# from demo/merchant/. Relative asset links (assets/simplyshop.css) resolve
+# under this same prefix. html=True lets /store/<name>.html work directly.
+#   /store/1_dermshield_sunscreen.html   — CLEAN
+#   /store/2_gamdisk_drive.html          — hidden injection in a review (+ ?reveal=1)
+#   /store/3_modhak_jars.html            — visible coupon injection (+ ?stage=checkout)
+_DEMO_DIR = os.path.join(os.path.dirname(__file__), "..", "demo", "merchant")
+if os.path.isdir(_DEMO_DIR):
+    app.mount("/store", StaticFiles(directory=_DEMO_DIR, html=True), name="store")
 
 
 @app.on_event("startup")
