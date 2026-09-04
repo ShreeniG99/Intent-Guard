@@ -15,7 +15,8 @@ import os
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Body
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
 from broadcaster import broadcaster
@@ -24,7 +25,8 @@ from db import init_db, get_connection
 from tokens import issue_token, validate_token, consume_token, TokenError
 from catalog import take_snapshot, check_freshness
 from risk import evaluate, check_hard_blocks
-from razorpay_client import create_order, fetch_payment, capture_payment, refund_payment
+from razorpay_client import (create_order, fetch_payment, capture_payment,
+                             refund_payment, get_client)
 
 app = FastAPI(title="Checkout Integrity Firewall")
 
@@ -340,6 +342,67 @@ async def post_capture(req: CaptureRequest):
             return {"status": "refunded", "reason": consistency_reasons}
     finally:
         conn.close()
+
+
+# --- GET /pay  +  POST /pay/callback ----------------------------------------
+# Minimal hosted-checkout page for authorizing a real TEST-MODE payment
+# against a manual-capture order, so /payments/capture can be exercised
+# end-to-end (Razorpay S2S/Direct APIs are not enabled on the test account,
+# so a Checkout.js browser flow is the only way to mint an `authorized`
+# payment). Doubles as the demo's mini merchant checkout.
+# Test card: 4111 1111 1111 1111, any future expiry, any CVV, no OTP.
+
+@app.get("/pay", response_class=HTMLResponse)
+def pay_page(order_id: str):
+    key_id = os.environ["RAZORPAY_KEY_ID"]
+    order = get_client().order.fetch(order_id)
+    return f"""<!doctype html><html><head><meta charset="utf-8">
+<title>Firewall test checkout</title></head><body style="font-family:system-ui;padding:2rem">
+<h3>Checkout Integrity Firewall &mdash; TEST checkout</h3>
+<p>Order <code>{order_id}</code> &middot; amount &#8377;{order['amount']/100:.2f} &middot; manual capture</p>
+<p>Pay with test card <b>4111 1111 1111 1111</b>, any future expiry, any CVV.</p>
+<pre id="result" style="background:#f4f4f4;padding:1rem;border-radius:6px">waiting for payment&hellip;</pre>
+<button id="paybtn">Open payment</button>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+var rzp = new Razorpay({{
+  key: "{key_id}",
+  order_id: "{order_id}",
+  amount: {order['amount']},
+  currency: "INR",
+  name: "Checkout Integrity Firewall (TEST)",
+  description: "end-to-end capture harness",
+  prefill: {{ contact: "9999999999", email: "test@example.com" }},
+  handler: function(resp) {{
+    document.getElementById('result').textContent =
+      "AUTHORIZED payment_id=" + resp.razorpay_payment_id +
+      " order_id=" + resp.razorpay_order_id;
+    fetch('/pay/callback', {{method:'POST', headers:{{'Content-Type':'application/json'}},
+      body: JSON.stringify(resp)}});
+  }},
+  modal: {{ ondismiss: function() {{
+    document.getElementById('result').textContent = 'payment dismissed';
+  }} }}
+}});
+document.getElementById('paybtn').onclick = function() {{ rzp.open(); }};
+rzp.open();
+</script>
+</body></html>"""
+
+
+@app.post("/pay/callback")
+async def pay_callback(payload: dict = Body(...)):
+    """Checkout.js posts {razorpay_order_id, razorpay_payment_id,
+    razorpay_signature} here on success. We record it in the audit log so a
+    test/poller can pick up the authorized payment_id, and broadcast it."""
+    order_id = payload.get("razorpay_order_id")
+    payment_id = payload.get("razorpay_payment_id")
+    write_audit("test_payment_authorized", order_id=order_id, payment_id=payment_id,
+                detail=json.dumps(payload))
+    await broadcaster.broadcast({
+        "event": "test_payment_authorized", "order_id": order_id, "payment_id": payment_id,
+    })
+    return {"ok": True, "order_id": order_id, "payment_id": payment_id}
 
 
 # --- GET /audit ---------------------------------------------------------------
