@@ -28,3 +28,19 @@ beautifulsoup4==4.15.0
 lxml==6.1.2               # BeautifulSoup(html, "lxml") parser backend
 requests==2.34.2          # test_main.py / test_capture_e2e.py / test_broadcaster.py
                          # + eval/fetch_amazon_reviews.py raw-JSONL streaming
+websockets==17.1          # (listed above too) also used by test_broadcaster.py's client
+
+# --- demo shopping agent (agent/*.py) --------------------------------------
+browser-use==0.13.10       # real agent: LLM decides, drives a real Chrome tab via CDP
+browser-use[core]==0.13.10 # platform browser driver (browser-use-core) -- see note below
+google-genai==1.65.0       # browser-use's native Gemini client (ChatGoogle)
+#
+# The [core] extra installs a platform-specific "browser-use-core" wheel
+# (win32/darwin/linux markers baked into browser-use's own metadata) that
+# does the actual CDP browser control. `pip install -r requirements.txt`
+# resolves this correctly on any of those platforms in one pass -- it is
+# NOT an optional/skippable extra, the base package alone cannot drive a
+# browser. Needs a real Chrome/Chromium installed on the machine (browser-use
+# attaches to it via CDP; confirm with `browser-use --doctor`).
+# Needs one of GEMINI_API_KEY / GOOGLE_API_KEY in .env (free tier, no card:
+# https://ai.google.dev/gemini-api/docs/rate-limits).

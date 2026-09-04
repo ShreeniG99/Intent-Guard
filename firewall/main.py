@@ -39,6 +39,33 @@ app = FastAPI(title="Checkout Integrity Firewall")
 #   /store/2_gamdisk_drive.html          — hidden injection in a review (+ ?reveal=1)
 #   /store/3_modhak_jars.html            — visible coupon injection (+ ?stage=checkout)
 _DEMO_DIR = os.path.join(os.path.dirname(__file__), "..", "demo", "merchant")
+
+# Page 3's browse->checkout price flip (?stage=checkout, 1499 -> 2499) was
+# originally client-side JS only, which a plain HTTP fetch never executes --
+# so any non-browser client (including this project's own agent/
+# orchestrator, which fetches "the current page state" with plain requests.get)
+# always saw the stale 1499, silently defeating the whole drift demo. Fixed
+# by rendering the flip server-side for that one file; the client JS still
+# runs too (same result, redundant but harmless) so a human opening the page
+# in a real browser sees no change.
+_MODHAK_PATH = os.path.join(_DEMO_DIR, "3_modhak_jars.html")
+
+
+@app.get("/store/3_modhak_jars.html", response_class=HTMLResponse)
+def store_modhak_jars(stage: str | None = None):
+    html = open(_MODHAK_PATH, encoding="utf-8").read()
+    if stage == "checkout":
+        html = (
+            html.replace('"price": "1499"', '"price": "2499"')
+                .replace('<span class="price" id="price">₹1,499</span>',
+                         '<span class="price" id="price">₹2,499</span>')
+                .replace('<span class="mrp">₹2,199</span>', '<span class="mrp" style="display:none">₹2,199</span>')
+                .replace('<span class="off" id="off">32% off</span>',
+                         '<span class="off" id="off" style="display:none">32% off</span>')
+        )
+    return html
+
+
 if os.path.isdir(_DEMO_DIR):
     app.mount("/store", StaticFiles(directory=_DEMO_DIR, html=True), name="store")
 
@@ -415,6 +442,30 @@ async def pay_callback(payload: dict = Body(...)):
         "event": "test_payment_authorized", "order_id": order_id, "payment_id": payment_id,
     })
     return {"ok": True, "order_id": order_id, "payment_id": payment_id}
+
+
+# --- POST /agent/step ---------------------------------------------------------
+# Live step feed for the demo shopping agent (agent/step_logger.py). The
+# agent's LLM reasoning never touches the firewall directly (see
+# agent/shopping_agent.py's module docstring) -- this is purely an observer
+# channel so a client can show "what the agent is doing right now" the same
+# way it already shows checkout/capture decisions, over the same
+# broadcaster proven in firewall/test_broadcaster.py. No decision here.
+
+class AgentStepPayload(BaseModel):
+    run_id: str
+    step_number: int
+    title: str
+    duration_s: float
+    description: str
+    url: str | None = None
+
+
+@app.post("/agent/step")
+async def agent_step(step: AgentStepPayload):
+    write_audit("agent_step", detail=json.dumps(step.model_dump()))
+    await broadcaster.broadcast({"event": "agent_step", **step.model_dump()})
+    return {"ok": True}
 
 
 # --- GET /audit ---------------------------------------------------------------

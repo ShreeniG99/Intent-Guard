@@ -158,6 +158,23 @@ def detect_imperative_text(text: str) -> dict:
     return {"found": len(matches) > 0, "matches": matches}
 
 
+def flatten_html_to_text(text: str) -> str:
+    """Flatten any HTML markup down to plain visible text for the ML
+    classifier, which is tuned on natural language and misreads raw tags,
+    attributes, and SVG path data as anomalous/injected syntax (confirmed:
+    a real clean product page's markup scored ~0.99 injection_confidence as
+    raw HTML vs ~0.001 as plain text). This does NOT respect CSS visibility
+    -- BeautifulSoup's get_text() extracts every text node regardless of
+    display:none -- so hidden content still reaches the classifier as plain
+    text; it only loses its "this was structurally hidden" signal, which
+    detect_hidden_dom() above already captures separately via the +20
+    deterministic flag, computed on the untouched original text."""
+    if "<" not in text:
+        return text
+    soup = BeautifulSoup(text, "html.parser")
+    return soup.get_text(" ", strip=True)
+
+
 # --- main entry point -------------------------------------------------------
 
 def sanitize(text: str) -> dict:
@@ -177,6 +194,7 @@ def sanitize(text: str) -> dict:
         score += 20
 
     cleaned = strip_unicode_anomalies(text)
+    cleaned = flatten_html_to_text(cleaned)
     cleaned = unicodedata.normalize("NFKC", cleaned)
 
     return {
