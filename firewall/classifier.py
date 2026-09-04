@@ -16,7 +16,7 @@ the first invocation has to happen in your own terminal (see the
 instructions printed at the bottom of this file, or the message from
 the assistant). After that first download, the weights sit in your
 local Hugging Face cache (~/.cache/huggingface by default / the
-%USERPROFILE%\.cache\huggingface equivalent on Windows) and every
+%USERPROFILE%\\.cache\\huggingface equivalent on Windows) and every
 later run loads from that cache -- no network needed after that.
 """
 import torch
