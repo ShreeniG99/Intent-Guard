@@ -32,9 +32,9 @@ attack does NOT sail straight through unexamined.
 Note: earlier versions of this script also reported an "evasion-subset
 detection rate" and "hard-negative false-positive rate" -- those relied on
 self-authored / mechanically-derived rows that have since been removed
-from the dataset (see eval/not_used_synthetic/). Those metrics no longer
-have real data behind them, so this version reports only what the real
-731-row set actually supports.
+from the dataset (the eval/not_used_synthetic/ dir; deleted 2026-09-04,
+still in git history). Those metrics no longer have real data behind them,
+so this version reports only what the real 766-row set actually supports.
 
 MUST be run from the project root, inside the venv (needs torch/transformers
 and the already-downloaded ProtectAI v2 weights):

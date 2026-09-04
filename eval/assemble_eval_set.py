@@ -3,8 +3,10 @@ assemble_eval_set.py
 
 Builds eval_set.jsonl from REAL sources only. No synthetic, hand-authored, or
 mechanically-derived (paraphrased / obfuscated) rows -- per the standing
-real-data-only decision. Removed synthetic material is parked, unused, in
-eval/not_used_synthetic/.
+real-data-only decision. The earlier synthetic material (dir
+eval/not_used_synthetic/) was deleted from the working tree on 2026-09-04;
+it is still in git history at the initial commit if ever needed for the audit
+trail.
 
 Sources (all real, all fetched by the eval/fetch_*.py scripts):
 

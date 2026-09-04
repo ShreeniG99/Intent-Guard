@@ -445,7 +445,7 @@ Generic "fraud prevention saves money" pitches are forgettable. Here's the Razor
 
 ## 11. Eval results — status as of Sept 3 2026 (v5, SUPERSEDES every version below)
 
-**All eight label×surface cells now have real data.** v5 adds a real `injected/alt_text` and `injected/coupon` class (near-analogs — see caveat below). `eval/eval_set.jsonl` is now **766 rows, real data only** (no synthetic / hand-authored / paraphrased rows; removed synthetic material still parked in `eval/not_used_synthetic/`; `technique` / `base_id` still `null` on every row; `notes` carries per-row provenance caveats, non-null on every injected row except StakeBench).
+**All eight label×surface cells now have real data.** v5 adds a real `injected/alt_text` and `injected/coupon` class (near-analogs — see caveat below). `eval/eval_set.jsonl` is now **766 rows, real data only** (no synthetic / hand-authored / paraphrased rows; the removed synthetic material — 22 self-authored + 15 derived — was deleted from the working tree on 2026-09-04, still recoverable from git history at the initial commit `1f805c2` under `eval/not_used_synthetic/`; `technique` / `base_id` still `null` on every row; `notes` carries per-row provenance caveats, non-null on every injected row except StakeBench).
 
 | label | surface | source | n | origin (license) |
 |---|---|---|---|---|
