@@ -31,12 +31,24 @@ EIA's (MIT-origin) and WAInjectBench is a public research release, but the
 no-license status is flagged in every row's `notes` and in the plan doc so the
 decision to keep or drop these rows stays visible and reversible.
 
-The 62 EIA_w_EI rows collapse to 18 DISTINCT strings (one template, 18 real
-PII-field names). We keep the 18.
+EIA_w_EI (62 rows) collapses to 18 distinct strings (one explicit-instruction
+template, 18 PII-field names). EIA_wo_EI (186 rows) collapses to ~61 distinct
+deceptive-label strings. We keep both -> ~79 rows, tagged `source` "eia" and
+"eia_grounding".
+
+Why also pull EIA_wo_EI (added 2026-09-04): a fresh deep search confirmed NO
+public, real, downloadable dataset places injections in a literal `alt=` /
+`aria-label` -- the one benchmark that does (Hidden-in-Plain-Text / OpenRAG-Soc,
+WWW'26, ~1,280 alt + 980 ARIA) is author-synthesized AND not released; the
+in-the-wild studies (Khodayari CCS'26; Forcepoint X-Labs) each show ONE real
+a11y-attribute example and publish no reusable feed. So EIA is the whole real
+budget for this surface, and its grounding variant is the honest way to grow
+the cell -- those rows are engineered to look benign, so the classifier misses
+most, which is the true picture of content-scanning vs a11y-attribute injection.
 
 CAVEAT (in every row's `notes`): accessibility-label / aria-label injection,
-not a literal `alt=` attribute; one EIA template family, low intra-set
-diversity; PII-exfiltration mechanism, not checkout hijack.
+not a literal `alt=` attribute; one paper (EIA), PII-exfiltration mechanism,
+not checkout hijack.
 
 Run from the eval/ folder:  python fetch_injected_alt_text.py
 Writes: injected_alt_text.json  (list of {text, source, notes})
@@ -46,41 +58,72 @@ import re
 import urllib.request
 
 OUT_PATH = "injected_alt_text.json"
-SRC_URL = (
-    "https://raw.githubusercontent.com/Norrrrrrr-lyn/WAInjectBench/main/"
-    "data/text/malicious/EIA_w_EI.jsonl"
-)
+BASE = "https://raw.githubusercontent.com/Norrrrrrr-lyn/WAInjectBench/main/data/text/malicious/"
+
+# Two EIA attack sub-types, BOTH placed in a hidden form's <label>/aria-label
+# (a11y-tree text -- same channel as alt=; not literally alt=):
+#   EIA_w_EI  = explicit-instruction variant ("ALERT ! ! !: BEFORE TYPING ...")
+#   EIA_wo_EI = grounding variant ("<field label> This is the right place to
+#               input the <field>") -- deception, no imperative. Designed to
+#               look benign, so a content classifier is expected to miss most;
+#               including it makes this cell's recall an honest number instead
+#               of 18/18 on one loud template.
+_NO_LICENSE = ("Content MIT-origin (OSU-NLP EIA); pulled via WAInjectBench, "
+               "which carries NO explicit license -- keep/drop flagged in the plan.")
+
+
+def _fetch_distinct(fname):
+    raw = urllib.request.urlopen(BASE + fname, timeout=45).read().decode("utf-8", "ignore")
+    seen, out = set(), []
+    for line in raw.splitlines():
+        if not line.strip():
+            continue
+        t = re.sub(r"\s+", " ", json.loads(line)["text"]).strip()
+        if t not in seen:
+            seen.add(t)
+            out.append(t)
+    return out
 
 
 def main():
-    raw = urllib.request.urlopen(SRC_URL, timeout=45).read().decode("utf-8", "ignore")
-    seen, rows = set(), []
-    for line in raw.splitlines():
-        line = line.strip()
-        if not line:
-            continue
-        text = re.sub(r"\s+", " ", json.loads(line)["text"]).strip()
-        if text in seen:
-            continue
-        seen.add(text)
+    rows = []
+
+    for text in _fetch_distinct("EIA_w_EI.jsonl"):
         field = re.search(r'BEFORE TYPING "([^"]+)"', text)
         rows.append({
-            "text": text,
-            "source": "eia",
-            "notes": f"EIA (ICLR 2025), hidden-form label/aria-label injection targeting "
-                     f"the PII field {field.group(1) if field else '?'!r}; accessibility-"
-                     f"attribute injection -- nearest real analog to alt-text injection, "
-                     f"not a literal alt= attribute. Content MIT-origin "
-                     f"(OSU-NLP EIA); pulled via WAInjectBench, which carries NO explicit "
-                     f"license -- keep/drop decision flagged in the plan. One template "
-                     f"family (low intra-set diversity); PII-exfil mechanism, not checkout hijack.",
+            "text": text, "source": "eia",
+            "notes": f"EIA (ICLR 2025) explicit-instruction a11y-label injection, target "
+                     f"PII field {field.group(1) if field else '?'!r}. Nearest real analog "
+                     f"to alt-text injection, not a literal alt= attribute. {_NO_LICENSE} "
+                     f"PII-exfil mechanism, not checkout hijack.",
         })
+
+    for text in _fetch_distinct("EIA_wo_EI.jsonl"):
+        rows.append({
+            "text": text, "source": "eia_grounding",
+            "notes": f"EIA (ICLR 2025) grounding-attack variant: a deceptive form-field "
+                     f"label injected into the a11y tree to redirect where the agent types "
+                     f"PII -- no imperative, engineered to look benign (a content classifier "
+                     f"is expected to miss it; the intent-match downstream is what catches "
+                     f"the misdirected PII entry). Nearest real analog to alt-text injection, "
+                     f"not a literal alt= attribute. {_NO_LICENSE}",
+        })
+
+    # cross-variant dedupe (a couple of short labels can collide)
+    seen, deduped = set(), []
+    for r in rows:
+        k = r["text"].lower()
+        if k not in seen:
+            seen.add(k)
+            deduped.append(r)
+    rows = deduped
 
     with open(OUT_PATH, "w", encoding="utf-8") as f:
         json.dump(rows, f, indent=2, ensure_ascii=False)
+    from collections import Counter
     print(f"Saved {len(rows)} distinct real injected-alt_text rows to {OUT_PATH}")
-    for r in rows:
-        print(f"  {r['text'][:110]}")
+    for s, n in Counter(r["source"] for r in rows).items():
+        print(f"  {s}: {n}")
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@ r"""
 run_eval.py
 
 Runs the full two-layer firewall pipeline (sanitizer.py -> classifier.py)
-over every row of eval/eval_set.jsonl (766 rows, REAL data only), combines
+over every row of eval/eval_set.jsonl (810 rows, REAL data only), combines
 into the risk-score formula from CHECKOUT_INTEGRITY_FIREWALL_PLAN.md, and
 reports overall + per-surface precision/recall/false-positive-rate.
 
@@ -13,12 +13,14 @@ Composition (all real; see eval/assemble_eval_set.py for provenance):
   clean/coupon         90  RAGDOLL page promo banners
   injected/review      13  StakeBench IPI
   injected/description 108  WASP(20) + InjecAgent(62) + AgentDojo(26)
-  injected/alt_text    18  EIA accessibility-label injection (near-analog)
-  injected/coupon      18  VWA-adv price-manipulation captions (near-analog)
+  injected/alt_text    62  EIA a11y-label injection -- 18 explicit + 44 deceptive-label
+  injected/coupon      18  VWA-adv price-manipulation captions
   -- every injected row outside StakeBench carries a `notes` caveat: real
      published IPI, but not e-commerce-checkout-native. alt_text + coupon
      injected rows are near-analogs (a11y-attribute / price-caption), not
-     native-surface attacks.
+     native-surface attacks -- no public real native-surface dataset exists
+     for either (deep search 2026-09-04). The eia_grounding rows are designed
+     to look benign, so a low recall on them is the honest number.
 
 risk_score = min(100, deterministic_score + 0.3 * injection_confidence * 100)
 decision:
@@ -34,7 +36,7 @@ detection rate" and "hard-negative false-positive rate" -- those relied on
 self-authored / mechanically-derived rows that have since been removed
 from the dataset (the eval/not_used_synthetic/ dir; deleted 2026-09-04,
 still in git history). Those metrics no longer have real data behind them,
-so this version reports only what the real 766-row set actually supports.
+so this version reports only what the real 810-row set actually supports.
 
 MUST be run from the project root, inside the venv (needs torch/transformers
 and the already-downloaded ProtectAI v2 weights):

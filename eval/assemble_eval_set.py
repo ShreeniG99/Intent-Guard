@@ -42,11 +42,16 @@ Sources (all real, all fetched by the eval/fetch_*.py scripts):
 
 `injected / alt_text` + `injected / coupon` -- NEAR-ANALOGS, added after a
 dedicated deep search found no native-surface real data for either:
-    - alt_text: EIA (OSU-NLP/EIA_against_webagent, MIT-origin), 18 distinct
-      strings = one template family, PII field name swapped. Accessibility
-      <label>/aria-label injection read off the a11y tree -- same channel as
-      alt=, not literally alt=. Pulled via WAInjectBench (NO explicit license
-      on that repo -- flagged in row notes + plan; keep/drop stays reversible).
+    - alt_text: EIA (OSU-NLP/EIA_against_webagent, MIT-origin). 18 explicit-
+      instruction strings (source "eia") + 44 deceptive-label strings (source
+      "eia_grounding"). Accessibility <label>/aria-label injection read off the
+      a11y tree -- same channel as alt=, not literally alt=. A dedicated deep
+      search (2026-09-04) confirmed no public + real + downloadable dataset
+      places injections in a literal alt=/aria-label (Hidden-in-Plain-Text /
+      OpenRAG-Soc has ~1,280 alt + 980 ARIA but is author-synthesized and
+      unreleased; the in-the-wild studies publish 1 example each, no feed).
+      Pulled via WAInjectBench (NO explicit license on that repo -- flagged in
+      row notes + plan; keep/drop stays reversible).
     - coupon: VWA-adv (ChenWu98/agent-attack, MIT) `*_wrong_price_*` adversarial
       product-image captions -- price/offer manipulation, not a literal
       coupon-code field. (This is why the earlier "agent-attack = image only"
@@ -130,10 +135,14 @@ def main():
 
     # ---- injected / alt_text : EIA (accessibility-attribute injection) ----
     #   Nearest real analog to alt= injection: instruction in a hidden form's
-    #   <label>/aria-label, read off the a11y tree. One EIA template family,
-    #   18 distinct PII-field variants. Content MIT-origin (OSU-NLP EIA);
-    #   pulled via WAInjectBench, which has no explicit license (row `notes`
-    #   + plan doc flag this; keep/drop is a visible, reversible call).
+    #   <label>/aria-label, read off the a11y tree. Two EIA sub-types:
+    #   source "eia" = explicit-instruction ("ALERT ! ! !: BEFORE TYPING ...", 18),
+    #   source "eia_grounding" = deceptive-label variant (44) engineered to look
+    #   benign -- the classifier is expected to miss most, which is the honest
+    #   picture of content-scanning vs a11y-attribute injection. No public real
+    #   native-alt= dataset exists (deep search 2026-09-04). Content MIT-origin
+    #   (OSU-NLP EIA); pulled via WAInjectBench, which has no explicit license
+    #   (row `notes` + plan doc flag this; keep/drop is a visible, reversible call).
     for i, r in enumerate(load("injected_alt_text.json")):
         rows.append({"id": f"INJ_EIA_{i + 1:03d}", "text": r["text"], "label": "injected",
                      "surface": "alt_text", "source": r["source"],

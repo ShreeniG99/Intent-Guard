@@ -1,12 +1,30 @@
-transformers>=4.35
-torch>=2.0
-huggingface_hub
-datasets
-beautifulsoup4
-lxml
-scikit-learn
-fastapi
-uvicorn
-pydantic
-razorpay
-python-dotenv
+# Checkout Integrity Firewall -- pinned to the verified environment.
+# Python 3.12.  Install into a venv:
+#     python -m venv .venv
+#     .venv/Scripts/python -m pip install -r requirements.txt   (Windows)
+#     .venv/bin/python     -m pip install -r requirements.txt   (POSIX)
+#
+# Only packages that are actually imported by firewall/, run_eval.py,
+# test_*.py, or eval/fetch_*.py are listed. (scikit-learn and datasets were
+# in an earlier draft but nothing imports them -- run_eval.py computes its
+# metrics by hand and the Amazon fetch streams raw JSONL over HTTP.)
+
+# --- firewall runtime (firewall/*.py) --------------------------------------
+fastapi==0.141.1
+uvicorn==0.52.4
+websockets==17.1          # ASGI WebSocket protocol for uvicorn + the WS test client
+pydantic==2.13.5
+starlette==0.48.0         # WebSocket type import in broadcaster.py (also a FastAPI dep)
+razorpay==2.0.1           # official SDK -- test-mode order/capture/refund/fetch
+python-dotenv==1.2.3      # loads RAZORPAY_* from .env
+
+# --- ML content classifier (firewall/classifier.py, run_eval.py) ----------
+transformers==5.16.1
+torch==2.13.0
+huggingface-hub==1.29.0   # model download + eval/fetch_ragdoll_*.py (hf_hub_download)
+
+# --- deterministic sanitizer + eval data builders ------------------------
+beautifulsoup4==4.15.0
+lxml==6.1.2               # BeautifulSoup(html, "lxml") parser backend
+requests==2.34.2          # test_main.py / test_capture_e2e.py / test_broadcaster.py
+                         # + eval/fetch_amazon_reviews.py raw-JSONL streaming
