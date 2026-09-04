@@ -17,10 +17,8 @@ Served by the firewall app: `firewall/main.py` mounts this folder at `/store`.
 
 All fictional: fictional store, fictional brands (**DermShield**, **GamDisk**,
 **Modhak**), fictional sellers. No real company's branding, content, or
-reviews are used. Pages 1 and 3 use real product photos in `assets/`
-(`derm-*.png`, `modhak-*.png`); page 2's drive image is still a hand-drawn SVG
-— drop `gamdisk-*.png` into `assets/` and swap the `<svg>` for an `<img>` to
-replace it.
+reviews are used. All three galleries use real product photos in `assets/`
+(`derm-*.png`, `GamDisk-*.png`, `modhak-*.png`).
 
 Each page carries a `schema.org/Product` JSON-LD block (SKU, price, offers,
 variants) so an agent has a clean machine-readable order to build.
