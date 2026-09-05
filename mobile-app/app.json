@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "IntentGuard",
+    "slug": "intentguard",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/logo.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#FD4D77",
+        "foregroundImage": "./assets/logo-adaptive-fg.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "softwareKeyboardLayoutMode": "resize"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/logo.png",
+          "backgroundColor": "#FD4D77",
+          "imageWidth": 220
+        }
+      ]
+    ]
+  }
+}

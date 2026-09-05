@@ -99,6 +99,37 @@ CREATE TABLE IF NOT EXISTS audit_log (
     detail          TEXT,
     created_at      TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+-- Mobile-app-facing run tracking. One row per POST /agent/run, updated as
+-- the run progresses (checkout_decision, payment_captured/refunded) so
+-- GET /runs and GET /runs/{run_id} have a single place to read from
+-- instead of joining across intents/orders/payments by hand.
+CREATE TABLE IF NOT EXISTS agent_runs (
+    run_id          TEXT PRIMARY KEY,
+    product_id      TEXT NOT NULL,
+    quantity        INTEGER NOT NULL,
+    max_price       REAL NOT NULL,
+    decision        TEXT,
+    risk_score      REAL,
+    hard_block_reasons_json TEXT,
+    order_id        TEXT,
+    payment_status  TEXT,
+    amount          REAL,
+    created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS agent_run_steps (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    run_id          TEXT NOT NULL REFERENCES agent_runs(run_id),
+    step_number     INTEGER NOT NULL,
+    title           TEXT NOT NULL,
+    duration_s      REAL NOT NULL,
+    description     TEXT NOT NULL,
+    url             TEXT,
+    screenshot_base64 TEXT,
+    highlight_box_json TEXT,
+    created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
 """
 
 

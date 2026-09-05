@@ -39,6 +39,45 @@ def _short_title(action_list) -> str:
     return name.replace("_", " ").strip().capitalize()
 
 
+def _highlight_box(browser_state_summary, action_list) -> dict | None:
+    """Best-effort bounding box (as percentages of the viewport, matching the
+    mobile app's overlay coordinate space) for whatever element the first
+    action targeted -- e.g. {"click_element_by_index": {"index": 42}}. Purely
+    an enhancement for the live "reading the page" view; any failure here
+    must never break the actual reasoning pipeline, hence the broad guard."""
+    try:
+        if not action_list:
+            return None
+        action_dict = action_list[0].model_dump(exclude_none=True)
+        params = next(iter(action_dict.values()))
+        if not isinstance(params, dict):
+            return None
+        index = params.get("index")
+        if index is None:
+            return None
+
+        selector_map = browser_state_summary.dom_state.selector_map
+        node = selector_map.get(index)
+        if node is None or node.absolute_position is None:
+            return None
+        rect = node.absolute_position
+
+        page_info = browser_state_summary.page_info
+        vw, vh = page_info.viewport_width, page_info.viewport_height
+        if not vw or not vh:
+            return None
+
+        x_pct = (rect.x - page_info.scroll_x) / vw * 100
+        y_pct = (rect.y - page_info.scroll_y) / vh * 100
+        w_pct = rect.width / vw * 100
+        h_pct = rect.height / vh * 100
+        if x_pct < -20 or y_pct < -20 or x_pct > 120 or y_pct > 120:
+            return None  # element is off-screen (scrolled out of the current viewport)
+        return {"x": round(x_pct, 1), "y": round(y_pct, 1), "width": round(w_pct, 1), "height": round(h_pct, 1)}
+    except Exception:
+        return None
+
+
 class StepLogger:
     """One instance per agent run. Pass `.on_step` as browser_use's
     `register_new_step_callback`."""
@@ -56,11 +95,13 @@ class StepLogger:
         elapsed = now - self._last_ts
         self._last_ts = now
 
-        title = _short_title(getattr(agent_output, "action", None))
+        action_list = getattr(agent_output, "action", None)
+        title = _short_title(action_list)
         eval_prev = (getattr(agent_output, "evaluation_previous_goal", "") or "").strip()
         next_goal = (getattr(agent_output, "next_goal", "") or "").strip()
         description = " ".join(x for x in (eval_prev, next_goal) if x) or "(no stated goal)"
         url = getattr(browser_state_summary, "url", "") or ""
+        screenshot = getattr(browser_state_summary, "screenshot", None)
 
         step = {
             "run_id": self.run_id,
@@ -69,6 +110,8 @@ class StepLogger:
             "duration_s": round(elapsed, 1),
             "description": description[:400],
             "url": url,
+            "screenshot_base64": screenshot,
+            "highlight_box": _highlight_box(browser_state_summary, action_list),
         }
         self.steps.append(step)
 

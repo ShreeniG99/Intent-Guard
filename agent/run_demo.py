@@ -23,6 +23,7 @@ run_<n>_<run_id>.json next to this file, so a run can be inspected or
 replayed into a UI without re-running the agent.
 """
 import argparse
+import asyncio
 import json
 import os
 import sys
@@ -111,14 +112,14 @@ def main():
 
     print(f"Expectation for page {args.page}: {EXPECTATION[args.page]}\n")
 
-    result = run_shopping_task(
+    result = asyncio.run(run_shopping_task(
         page_url=page_url,
         product_id=cfg["product_id"],
         variant_label=cfg["variant_label"],
         quantity=cfg["quantity"],
         max_price=cfg["max_price"],
         checkout_url=checkout_url,
-    )
+    ))
 
     out_path = os.path.join(os.path.dirname(__file__),
                              f"run_{args.page}_{result['run_id']}.json")

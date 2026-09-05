@@ -20,6 +20,9 @@ reference-repos/
 .remember/
 NUL
 
+# MS Office temp lock files
+~$*
+
 # HF / model caches (if any land in-tree)
 .cache/
 hf_cache/

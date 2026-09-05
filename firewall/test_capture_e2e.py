@@ -9,8 +9,9 @@ Why this script exists: Razorpay S2S / Direct APIs (`createPaymentJson`,
 "URL not found"), so the only way to produce an `authorized` payment is the
 Checkout.js browser flow. This script drives the CORE flow to create the
 order, then waits for a human (or a browser automation) to complete payment
-at  http://localhost:8000/pay?order_id=<id>  with test card
-4111 1111 1111 1111, then runs capture and asserts the outcome.
+at  http://localhost:8000/pay?order_id=<id>  with Razorpay's DOMESTIC test
+card 4100 2800 0000 1007 (an international test card like 4111 1111 1111 1111
+is rejected on this account), then runs capture and asserts the outcome.
 
 Two cases:
   A. consistent  -> order still matches intent  -> expect  {"status":"captured"}
