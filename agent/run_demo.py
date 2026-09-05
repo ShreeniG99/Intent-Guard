@@ -2,12 +2,13 @@
 run_demo.py
 
 CLI entry point for one full demo pass: real intent capture -> real
-browser_use agent (Gemini 2.5 Flash, real Chrome tab) browses one real
-Simply Shop page -> real firewall checkout decision.
+browser_use agent (Gemini 3.1 Flash-Lite by default, real Chrome tab)
+browses one real Simply Shop page -> real firewall checkout decision.
+See shopping_agent.py's module docstring for the LLM_PROVIDER options.
 
 Prereqs (checked at startup, not silently skipped):
   - firewall server running on :8000 (uvicorn main:app, from firewall/)
-  - GEMINI_API_KEY (or GOOGLE_API_KEY) set in .env
+  - GEMINI_API_KEY (or GROQ_API_KEY if LLM_PROVIDER=groq) set in .env
   - a real Chrome/Chromium installed (browser-use drives it via CDP --
     run `browser-use --doctor` to confirm)
 
@@ -27,6 +28,15 @@ import os
 import sys
 
 import requests
+
+# Windows consoles default to a legacy encoding (cp1252) that can't print
+# the Rupee sign browser-use logs on every step ("'charmap' codec can't
+# encode character '₹'") -- confirmed live, it self-recovers via
+# browser-use's own retry but wastes an attempt each time. Force UTF-8
+# stdout/stderr before anything else can print.
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8")
 
 sys.path.insert(0, os.path.dirname(__file__))
 from shopping_agent import run_shopping_task, FIREWALL_BASE  # noqa: E402
@@ -65,7 +75,7 @@ def preflight():
             f"firewall not reachable at {FIREWALL_BASE} -- start it first:\n"
             "    cd firewall && ../.venv/Scripts/python -m uvicorn main:app --port 8000"
         )
-    provider = os.environ.get("LLM_PROVIDER", "groq").strip().lower()
+    provider = os.environ.get("LLM_PROVIDER", "gemini").strip().lower()
     if provider == "groq" and not os.environ.get("GROQ_API_KEY"):
         problems.append(
             "GROQ_API_KEY not set. Get a free key (no card) at https://console.groq.com/keys "

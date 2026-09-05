@@ -23,3 +23,6 @@ NUL
 # HF / model caches (if any land in-tree)
 .cache/
 hf_cache/
+
+# Per-run shopping agent transcripts (agent/run_demo.py output)
+agent/run_*.json

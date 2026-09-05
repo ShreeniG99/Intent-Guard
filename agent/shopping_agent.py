@@ -17,19 +17,41 @@ the agent browse it again won't solve the issue" -- the fix is comparing the
 agent's *decision* against the customer's *original intent*, deterministically,
 outside the agent's control).
 
-Two free, vision-capable LLM providers are supported, chosen via LLM_PROVIDER
-in .env (default "groq"):
-  groq   -- Llama 4 Scout via Groq's own API. Genuinely free, no card: 30
-            RPM / 14,400 requests/day (console.groq.com/keys), and faster
-            than Gemini thanks to Groq's LPU inference hardware. Needs
-            GROQ_API_KEY. NOT the Hugging Face Inference Providers router
-            (router.huggingface.co) -- that proxies to paid-rate backends
-            out of a $0.10/month free credit, which is far too little for
-            a multi-step agent run. Groq's own free tier has no such cap.
-  gemini -- Gemini 2.5 Flash. Free tier, no card: 10 RPM / 1,500 req/day
-            (https://ai.google.dev/gemini-api/docs/rate-limits). Needs
-            GEMINI_API_KEY (or GOOGLE_API_KEY). The originally-verified
-            fallback if Groq's output quality disappoints on these pages.
+Two free LLM providers are supported, chosen via LLM_PROVIDER in .env
+(default "gemini" -- confirmed live end-to-end on all 3 demo pages):
+
+  gemini -- Gemini 3.1 Flash-Lite, WITH vision (screenshots). Free tier,
+            no card: 30 RPM / 1,500 req/day / 1M TPM. Needs GEMINI_API_KEY
+            (or GOOGLE_API_KEY). Landed here after two stale-recommendation
+            surprises, both confirmed live rather than assumed:
+            gemini-2.5-flash was retired for new API keys (404, "no longer
+            available to new users") between initial research and the
+            first live run; its suggested flagship replacement,
+            gemini-3.6-flash, then turned out to cap brand-new projects at
+            a hard 20 requests/DAY -- exhausted within one page's worth of
+            steps. The *lite* tier (not the flagship) turned out to carry
+            the generous 1,500/day quota.
+  groq   -- Qwen3.6-27B via Groq's own API, WITHOUT vision (USE_VISION
+            forced off below) -- Groq's free tier caps input tokens at
+            7,000/minute, and a single browser-use step needs ~11-13K
+            tokens whether or not vision is on (the DOM/task/schema
+            overhead alone exceeds it) -- confirmed by testing both ways,
+            not assumed. No general-purpose Groq model on the free tier
+            clears 8K TPM, so this path is capped to non-vision use.
+            Needs GROQ_API_KEY (console.groq.com/keys, 30 RPM / 14,400
+            req/day, no card). Kept as a fallback if Gemini's quota is
+            ever the blocker instead. NOT the Hugging Face Inference
+            Providers router (router.huggingface.co) -- that proxies to
+            paid-rate backends out of a $0.10/month free credit, far too
+            little for a multi-step run. Also note: Groq's model catalog
+            moves fast -- Llama 4 Scout (this was originally wired to it)
+            was fully retired from their lineup between initial research
+            and the first live run; confirmed via GET /v1/models against
+            the real key, not assumed.
+
+Lesson from both providers above, worth repeating: verify a model/tier
+against a real key before relying on a cached recommendation -- including
+this one, if enough time has passed since 2026-09-06.
 
 Run a full demo pass with agent/run_demo.py, not this file directly.
 """
@@ -52,9 +74,21 @@ from step_logger import StepLogger
 load_dotenv()
 
 FIREWALL_BASE = os.environ.get("FIREWALL_BASE_URL", "http://localhost:8000")
-LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "groq").strip().lower()
-GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
-GROQ_MODEL = os.environ.get("GROQ_MODEL", "meta-llama/llama-4-scout-17b-16e-instruct")
+LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "gemini").strip().lower()
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.1-flash-lite")
+GROQ_MODEL = os.environ.get("GROQ_MODEL", "qwen/qwen3.6-27b")
+
+# Vision (screenshots) is the more accurate way for browser-use to read a
+# page, but confirmed live: a single vision-enabled step needs ~13K input
+# tokens, and Groq's free tier caps qwen/qwen3.6-27b at 7,000 input
+# tokens/MINUTE -- a hard 413 on every request, not a slow-down. Gemini has
+# no such per-request cap, so vision stays on there. Override with
+# USE_VISION=true/false in .env if this changes (e.g. a Groq tier upgrade).
+_use_vision_env = os.environ.get("USE_VISION")
+if _use_vision_env is not None:
+    USE_VISION = _use_vision_env.strip().lower() in ("1", "true", "yes")
+else:
+    USE_VISION = LLM_PROVIDER != "groq"
 
 
 class ShoppingDecision(BaseModel):
@@ -221,7 +255,7 @@ def run_shopping_task(
         llm=llm,
         output_model_schema=ShoppingDecision,
         register_new_step_callback=logger.on_step,
-        use_vision=True,
+        use_vision=USE_VISION,
         max_actions_per_step=3,
     )
     history = asyncio.run(agent.run(max_steps=25))
