@@ -17,8 +17,19 @@ the agent browse it again won't solve the issue" -- the fix is comparing the
 agent's *decision* against the customer's *original intent*, deterministically,
 outside the agent's control).
 
-Needs GEMINI_API_KEY (or GOOGLE_API_KEY) in .env -- free tier, no card:
-https://ai.google.dev/gemini-api/docs/rate-limits (see .env.example).
+Two free, vision-capable LLM providers are supported, chosen via LLM_PROVIDER
+in .env (default "groq"):
+  groq   -- Llama 4 Scout via Groq's own API. Genuinely free, no card: 30
+            RPM / 14,400 requests/day (console.groq.com/keys), and faster
+            than Gemini thanks to Groq's LPU inference hardware. Needs
+            GROQ_API_KEY. NOT the Hugging Face Inference Providers router
+            (router.huggingface.co) -- that proxies to paid-rate backends
+            out of a $0.10/month free credit, which is far too little for
+            a multi-step agent run. Groq's own free tier has no such cap.
+  gemini -- Gemini 2.5 Flash. Free tier, no card: 10 RPM / 1,500 req/day
+            (https://ai.google.dev/gemini-api/docs/rate-limits). Needs
+            GEMINI_API_KEY (or GOOGLE_API_KEY). The originally-verified
+            fallback if Groq's output quality disappoints on these pages.
 
 Run a full demo pass with agent/run_demo.py, not this file directly.
 """
@@ -33,7 +44,7 @@ from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
-from browser_use import Agent
+from browser_use import Agent, ChatGroq
 from browser_use.llm.google.chat import ChatGoogle
 
 from step_logger import StepLogger
@@ -41,7 +52,9 @@ from step_logger import StepLogger
 load_dotenv()
 
 FIREWALL_BASE = os.environ.get("FIREWALL_BASE_URL", "http://localhost:8000")
+LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "groq").strip().lower()
 GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+GROQ_MODEL = os.environ.get("GROQ_MODEL", "meta-llama/llama-4-scout-17b-16e-instruct")
 
 
 class ShoppingDecision(BaseModel):
@@ -61,15 +74,31 @@ class ShoppingDecision(BaseModel):
     ))
 
 
-def get_llm() -> ChatGoogle:
-    api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
-    if not api_key:
-        raise RuntimeError(
-            "GEMINI_API_KEY (or GOOGLE_API_KEY) is not set.\n"
-            "Get a free key (no card required) at https://aistudio.google.com/apikey\n"
-            "then add GEMINI_API_KEY=... to .env (see .env.example)."
-        )
-    return ChatGoogle(model=GEMINI_MODEL, api_key=api_key)
+def get_llm():
+    """Returns the configured LLM (see LLM_PROVIDER in the module docstring).
+    Both providers implement browser_use's standard chat-model interface, so
+    nothing downstream (Agent, output_model_schema, step callback) needs to
+    know which one is active."""
+    if LLM_PROVIDER == "groq":
+        api_key = os.environ.get("GROQ_API_KEY")
+        if not api_key:
+            raise RuntimeError(
+                "GROQ_API_KEY is not set.\n"
+                "Get a free key (no card required) at https://console.groq.com/keys\n"
+                "then add GROQ_API_KEY=... to .env (see .env.example)."
+            )
+        return ChatGroq(model=GROQ_MODEL, api_key=api_key)
+    elif LLM_PROVIDER == "gemini":
+        api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+        if not api_key:
+            raise RuntimeError(
+                "GEMINI_API_KEY (or GOOGLE_API_KEY) is not set.\n"
+                "Get a free key (no card required) at https://aistudio.google.com/apikey\n"
+                "then add GEMINI_API_KEY=... to .env (see .env.example)."
+            )
+        return ChatGoogle(model=GEMINI_MODEL, api_key=api_key)
+    else:
+        raise RuntimeError(f"Unknown LLM_PROVIDER={LLM_PROVIDER!r}. Use 'groq' or 'gemini'.")
 
 
 def build_task(product_id: str, variant_label: str, quantity: int,

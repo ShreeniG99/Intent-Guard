@@ -65,7 +65,13 @@ def preflight():
             f"firewall not reachable at {FIREWALL_BASE} -- start it first:\n"
             "    cd firewall && ../.venv/Scripts/python -m uvicorn main:app --port 8000"
         )
-    if not (os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")):
+    provider = os.environ.get("LLM_PROVIDER", "groq").strip().lower()
+    if provider == "groq" and not os.environ.get("GROQ_API_KEY"):
+        problems.append(
+            "GROQ_API_KEY not set. Get a free key (no card) at https://console.groq.com/keys "
+            "and add GROQ_API_KEY=... to .env"
+        )
+    elif provider == "gemini" and not (os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")):
         problems.append(
             "GEMINI_API_KEY not set. Get a free key at https://aistudio.google.com/apikey "
             "and add GEMINI_API_KEY=... to .env"
