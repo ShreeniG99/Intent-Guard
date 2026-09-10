@@ -45,6 +45,7 @@ in test mode to create orders, capture payments, and issue refunds.
 
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/53eb5e13-a931-443e-a43b-6d17bcf882df" />
 
+
 The firewall sits between three untrusted, LLM-driven surfaces and two deterministic backends. The customer states intent (product, variant, qty, max price) to the mobile app, which hands off the task to a Gemini-driven shopping agent running in a real Chrome tab. The agent reads the merchant page - including third-party content like reviews — and proposes an order back to the firewall.
 
 The checkout integrity firewall never trusts the agent's output directly:
